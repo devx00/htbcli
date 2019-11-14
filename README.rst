@@ -23,6 +23,7 @@ after installing the module. configure it with
    # For VIP Users its the same just pass vip instead of free to the --lab argument.
    htb config --lab=vip --apiKey=[your_key]
 
+
 **List**
 
 You can list all the boxes on HTB. Just use the list command.
