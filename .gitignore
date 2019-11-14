@@ -3,3 +3,5 @@ dist/*
 htbcli.egg-info/*
 .bumpversion.cfg
 bin/*
+
+*__pycache__

@@ -22,8 +22,9 @@ class HTBAPI(HTB):
     """
 
     def __init__(self, api_key, user_agent='Python HTB Client/{}'.format(__version__)):
-        self.api_key = api_key
-        self.headers = {'User-Agent': user_agent}
+        HTB.__init__(self, api_key, user_agent)
+        self.headers['Authorization'] = f"Bearer {api_key}"
+        HTB._validate_response = HTBAPI._validate_response
 
     @staticmethod
     def _validate_response(response):
@@ -34,7 +35,7 @@ class HTBAPI(HTB):
         :params response: the response dict received from an API call
         :returns: the response dict if the call was successfull
         """
-        if response['success'] != '1':
+        if response['success'] != '1' and response['success'] != 1:
             message = "\n".join([ f"{k}: {v}" for k,v in response.items() ])
             raise HTBCLIError("success != 1", message=message)
         return response
@@ -79,7 +80,7 @@ class HTBAPI(HTB):
         :returns: bool if successful, str status message
         """
         try:
-            resp = self._post(self._auth('/vm/{}/assign/{}'.format(lab, mid))).json()
+            resp = self._post(self._auth('/vm/{}/assign/{}'.format(lab, mid)))
             return (resp['success'], resp['status'])
         except HTBAPIError as e:
             print(e.message)
@@ -95,7 +96,7 @@ class HTBAPI(HTB):
         :returns: bool if successful, str status message
         """
         try:
-            resp = self._post(self._auth('/vm/{}/remove/{}'.format(lab, mid))).json()
+            resp = self._post(self._auth('/vm/{}/remove/{}'.format(lab, mid)))
             return (resp['success'], resp['status'])
         except HTBAPIError as e:
             print(e.message)
