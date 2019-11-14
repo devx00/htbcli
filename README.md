@@ -3,6 +3,9 @@ Hack the Box CLI
 
 Just a small tool I threw together one day to make it easy to work with HTB from the command line. It uses the [API wrapper](https://github.com/kulinacs/htb) from @kulinacs with a few modifications.
 
+Usage
+--------
+
 **Install**
 
 ```bash
@@ -273,7 +276,8 @@ $ htb terminate chainsaw
 # status: Machine scheduled for termination.
 ```
 
-**Suggestions**
+Suggestions
+------------------
 
 If anyone has any feature requests, I will gladly hear them out but can't guarantee I will have time to implement them.
 

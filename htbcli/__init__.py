@@ -5,7 +5,7 @@ import requests
 from htb import HTB, HTBAPIError
 
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 class HTBCLIError(HTBAPIError):
     """Raised when API fails"""
