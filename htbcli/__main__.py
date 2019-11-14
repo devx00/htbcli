@@ -155,14 +155,26 @@ def do_list(args):
     """
     global machines
     def filter_machine(machine):
+        """
+        Check if machine matches the flags passed. (ie retired, owned_user, owned_root, or assigned)
+        """
         machine_retired = machine['retired']
         machine_incomplete = not machine['owned_user'] or not machine['owned_root']
-
-        return (machine_incomplete or not args.incomplete) and (not machine_retired or args.retired)
+        matches = (machine_incomplete or not args.incomplete) and (not machine_retired or args.retired)
+        if machine_ids is not None:
+            matches = matches and machine['id'] in machine_ids
+        return matches
+    
     if args.all_fields:
         fields = machines[0].keys() if len(machines) > 0 else []
     else:
         fields = args.fields or ["id", "name", "os", "rating", "owned_user", "owned_root", "active"]
+
+    machine_ids=None
+    if args.assigned:
+        assigned = api.get_assigned()
+        machine_ids = list(map(lambda x: x['id'], assigned))
+
 
     filtered_machines = list(filter(filter_machine, machines))
     if args.quiet:
@@ -272,6 +284,7 @@ def parse_args():
 
     list_parser = command_parsers.add_parser("list", help="list machines")
     list_parser.add_argument("--retired", action="store_true", help="Include retired boxes in the output. [NOTE: Retired boxes are only available to VIP users and cannot be accessed by a free user.]")
+    list_parser.add_argument("--assigned", action="store_true", help="Show what machines are assigned to you. [VIP Only]")
     list_parser.add_argument("--incomplete", action="store_true", help="Only show incomplete boxes in the output.\nAn incomplete box is one where you haven't owned both user and root.")
     list_parser.add_argument("-s", "--separator", type=str, default=" ", help="The separator to use when outputting the fields when -q is set")
     list_parser.add_argument("-rs", "--row-separator", type=str, default="\n", help="The separator to use between rows when outputting the fields when -q is set")

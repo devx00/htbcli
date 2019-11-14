@@ -48,6 +48,17 @@ class HTBAPI(HTB):
         """
         return requests.get(self.BASE_URL + self._auth('/machines/owns'), headers=self.headers).json()
 
+    def get_assigned(self) -> dict:
+        """
+        Get which machines the user has assigned to them.
+
+        :params self: HTB object in use
+        :returns: machines dict
+
+        VIP Only
+        """
+        return requests.get(self.BASE_URL + self._auth('/machines/assigned'), headers=self.headers).json()
+
     def get_difficulties(self) -> dict:
         """
         Get machines difficulty.
