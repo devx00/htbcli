@@ -3,6 +3,12 @@ Hack the Box CLI
 
 Just a small tool I threw together one day to make it easy to work with HTB from the command line. It uses the [API wrapper](https://github.com/kulinacs/htb) from @kulinacs with a few modifications.
 
+**Install**
+
+```bash
+pip install htbcli
+```
+
 **Config**
 
 after installing the module. configure it with
