@@ -71,6 +71,7 @@ def load_machines():
         machine['owned_user'] = owns_dict[machine['id']]['owned_user'] if machine['id'] in owns_dict else False
         machine['owned_root'] = owns_dict[machine['id']]['owned_root'] if machine['id'] in owns_dict else False
         machine['difficulty'] = format_diff(diffs_dict[machine['id']]['difficulty_ratings']) if machine['id'] in diffs_dict else ""
+        machine['difficulty_arr'] = diffs_dict[machine['id']]['difficulty_ratings'] if machine['id'] in diffs_dict else []
         machine['active'] = not machine['retired']
         return machine
     
@@ -164,6 +165,22 @@ def do_list(args):
         if machine_ids is not None:
             matches = matches and machine['id'] in machine_ids
         return matches
+    def sort_value(machine):
+        sort_field = args.sort_by
+        sort_val = machine[sort_field] if sort_field in machine else machine['id']
+        if sort_field == 'difficulty' and isinstance(machine['difficulty_arr'], list):
+            sort_val = machine['difficulty_arr']
+            total_votes = sum(sort_val)
+            weighted_vals = [ sort_val[i] * (i + 1) for i in range(len(sort_val))]
+            weighted_sum = sum(weighted_vals)
+            avg_diff = float(weighted_sum)/float(total_votes)
+            sort_val = avg_diff
+        
+        if type(sort_val) not in [str, bool, int, float]:
+            sort_val = machine['id']
+        
+        return sort_val
+
     
     if args.all_fields:
         fields = machines[0].keys() if len(machines) > 0 else []
@@ -177,6 +194,7 @@ def do_list(args):
 
 
     filtered_machines = list(filter(filter_machine, machines))
+    filtered_machines.sort(key=sort_value, reverse=args.reverse)
     if args.quiet:
         print(args.row_separator.join([ args.separator.join([ str(machine[field]) for field in fields]) for machine in filtered_machines]))
     else:
@@ -288,6 +306,8 @@ def parse_args():
     list_parser.add_argument("--retired", action="store_true", help="Include retired boxes in the output. [NOTE: Retired boxes are only available to VIP users and cannot be accessed by a free user.]")
     list_parser.add_argument("--assigned", action="store_true", help="Show what machines are assigned to you. [VIP Only]")
     list_parser.add_argument("--incomplete", action="store_true", help="Only show incomplete boxes in the output.\nAn incomplete box is one where you haven't owned both user and root.")
+    list_parser.add_argument("--sort-by", type=str, default="id", metavar="field", help="Field to sort by.\nThis will sort the boxes by the passed field. To see more or less what fields you can sort by list the boxes with the -a flag and look at the column headers. Not all fields are valid sort-by fields though. Defaults to 'id' if not present or invalid field")
+    list_parser.add_argument("--reverse", action="store_true", help="Reverse the order of boxes.\nThis will return the list sorted by the sort field in reverse.")
     list_parser.add_argument("-s", "--separator", type=str, default=" ", help="The separator to use when outputting the fields when -q is set")
     list_parser.add_argument("-rs", "--row-separator", type=str, default="\n", help="The separator to use between rows when outputting the fields when -q is set")
     list_parser.add_argument("-q", "--quiet", action="store_true", help="Output only the field values without any formatting. Useful when parsing the output.")

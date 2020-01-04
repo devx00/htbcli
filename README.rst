@@ -33,17 +33,27 @@ You can list all the boxes on HTB. Just use the list command.
 .. code-block:: bash
 
    $ htb list -h
-   # usage: htb list [-h] [--retired] [--incomplete] [-s SEPARATOR]
-   #                 [-rs ROW_SEPARATOR] [-q] [-f field [field ...]] [-a]
+   # usage: htb list [-h] [--retired] [--assigned] [--incomplete] [--sort-by field]
+   #                 [--reverse] [-s SEPARATOR] [-rs ROW_SEPARATOR] [-q]
+   #                 [-f field [field ...]] [-a]
 
    # optional arguments:
    #   -h, --help            show this help message and exit
    #   --retired             Include retired boxes in the output. [NOTE: Retired
    #                         boxes are only available to VIP users and cannot be
    #                         accessed by a free user.]
+   #   --assigned            Show what machines are assigned to you. [VIP Only]
    #   --incomplete          Only show incomplete boxes in the output. An
    #                         incomplete box is one where you haven't owned both
    #                         user and root.
+   #   --sort-by field       Field to sort by. This will sort the boxes by the
+   #                         passed field. You can reverse the order by passing
+   #                         --reverse. Certain fields like difficulty will be the
+   #                         average value. To sort by the official HTB rank (ie
+   #                         easy/medium/hard) sort by the amount of points the box
+   #                         is/was assigned.
+   #   --reverse             Reverse the order of boxes. This will return the list
+   #                         sorted by the sort field in reverse.
    #   -s SEPARATOR, --separator SEPARATOR
    #                         The separator to use when outputting the fields when
    #                         -q is set
@@ -56,6 +66,7 @@ You can list all the boxes on HTB. Just use the list command.
    #                         Limit the output to only these fields. All fields
    #                         shown when this is omitted.
    #   -a, --all-fields      Output every field on the machines.
+
 
    $ htb list
    # ╒══════╤════════════╤═════════╤══════════╤══════════════╤══════════════╤══════════╕
