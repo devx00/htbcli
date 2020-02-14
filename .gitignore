@@ -5,3 +5,4 @@ htbcli.egg-info/*
 bin/*
 
 *__pycache__
+.vscode/
