@@ -103,7 +103,10 @@ def format_value(val):
 def normalized_diff(difficulty):
     max_val = max(difficulty)
     step_size = float(max_val) / 7.0
-    return list(map(lambda x: floor(float(x)/step_size), difficulty))
+    if step_size > 0:
+        return list(map(lambda x: floor(float(x)/step_size), difficulty))
+    else:
+        return list(map(lambda x: 0, difficulty))
 
 
 def format_diff(difficulty):
