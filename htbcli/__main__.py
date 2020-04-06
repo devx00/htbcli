@@ -1,7 +1,7 @@
 """
 A command line utility for interacting with the Hack the Box API
 """
-from . import HTBAPI
+from htbcli import HTBAPI
 import argparse
 from argparse import ArgumentParser
 from pathlib import Path
@@ -12,7 +12,8 @@ from termcolor import colored
 from math import floor
 apiKey = None
 lab = None
-
+machines = []
+api = None
 def init_api(apiKey):
     global api
     api = HTBAPI(apiKey)
@@ -179,10 +180,19 @@ def do_list(args):
             avg_diff = float(weighted_sum)/float(total_votes)
             sort_val = avg_diff
         
+        if sort_val is None:
+            sort_val = default_type()
         if type(sort_val) not in [str, bool, int, float]:
             sort_val = machine['id']
+
         
         return sort_val
+
+
+    for machine in machines:
+        if args.sort_by in machine and machine[args.sort_by] is not None:
+            default_type = type(machine[args.sort_by])
+            break
 
     
     if args.all_fields:
@@ -367,3 +377,7 @@ def main():
     if args.command != "config":
         load_machines()
     args.func(args)
+
+
+if __name__ == "__main__":
+    main()
