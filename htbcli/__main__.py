@@ -163,6 +163,14 @@ def do_list(args):
         """
         Check if machine matches the flags passed. (ie retired, owned_user, owned_root, or assigned)
         """
+
+        #If user passes in a box argument then only filter for that machine (case sensitive)
+        if args.box:
+            if machine['name'] == args.box:
+                return True
+            else:
+                return False
+
         machine_retired = machine['retired']
         machine_incomplete = not machine['owned_user'] or not machine['owned_root']
         matches = (machine_incomplete or not args.incomplete) and (not machine_retired or args.retired)
@@ -316,6 +324,7 @@ def parse_args():
     config_parser.set_defaults(func=do_config, command="config")
 
     list_parser = command_parsers.add_parser("list", help="list machines")
+    list_parser.add_argument("--box", metavar="BOX",  type=str, help="Box to limit list output to. ")
     list_parser.add_argument("--retired", action="store_true", help="Include retired boxes in the output. [NOTE: Retired boxes are only available to VIP users and cannot be accessed by a free user.]")
     list_parser.add_argument("--assigned", action="store_true", help="Show what machines are assigned to you. [VIP Only]")
     list_parser.add_argument("--incomplete", action="store_true", help="Only show incomplete boxes in the output.\nAn incomplete box is one where you haven't owned both user and root.")
