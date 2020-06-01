@@ -58,6 +58,12 @@ def load_config():
         config['List'] = {'defaultFields': ','.join(defaultFields)}
         write_config()
 
+    if "Info" not in config.sections():
+        defaultFields = ["id", "name", "os", "rating", "difficulty",
+                         "points", "owned_user", "owned_root", "user_blood", "root_blood", "maker", "maker2", "active"]
+        config['Info'] = {'defaultFields': ','.join(defaultFields)}
+        write_config()
+
     apiKey = config['Auth'].get('apiKey')
     lab = config['Auth'].get('lab')
 
@@ -99,6 +105,16 @@ def get_id(name):
     for machine in machines:
         if machine['name'].lower() == name.lower():
             return machine['id']
+    return None
+
+
+def get_box(name):
+    """
+    Finds and returns a box with the given name from the machines list.
+    """
+    for machine in machines:
+        if machine['name'].lower() == name.lower():
+            return machine
     return None
 
 def format_value(val):
@@ -229,14 +245,18 @@ def do_info(args):
     Currently only prints out the values of the specified box.
     Eventually, this should include options to better format the output.
     """
-    machine = api.get_machine(get_id(args.box))
+    machine = get_box(args.box)
+    machine.update(api.get_machine(machine['id']))
     if args.all_fields:
         fields = machine.keys()
     else:
         fields = args.fields or machine.keys()
+    
     if args.quiet:
         vals = [ str(machine[f]) for f in fields ]
         print(args.separator.join(vals))
+    elif args.list_format:
+        print_machine_list([machine], fields)
     else:
         print_machine(machine, fields)
 
@@ -326,7 +346,7 @@ def parse_args():
     config_parser.add_argument("--listFields", type=str, nargs="+", metavar="field", help="The default fields to show in List mode.")
     config_parser.set_defaults(func=do_config, command="config")
 
-    defaultFields = [x.strip() for x in config['List'].get('defaultFields').split(',')]
+    defaultListFields = [x.strip() for x in config['List'].get('defaultFields').split(',')]
     list_parser = command_parsers.add_parser("list", help="list machines")
     list_parser.add_argument("--retired", action="store_true", help="Include retired boxes in the output. [NOTE: Retired boxes are only available to VIP users and cannot be accessed by a free user.]")
     list_parser.add_argument("--assigned", action="store_true", help="Show what machines are assigned to you. [VIP Only]")
@@ -336,16 +356,19 @@ def parse_args():
     list_parser.add_argument("-s", "--separator", type=str, default=" ", help="The separator to use when outputting the fields when -q is set")
     list_parser.add_argument("-rs", "--row-separator", type=str, default="\n", help="The separator to use between rows when outputting the fields when -q is set")
     list_parser.add_argument("-q", "--quiet", action="store_true", help="Output only the field values without any formatting. Useful when parsing the output.")
-    list_parser.add_argument("-f", "--fields", metavar="field", default=defaultFields, nargs="+", type=str, help="Limit the output to only these fields. All fields shown when this is omitted.")
+    list_parser.add_argument("-f", "--fields", metavar="field", default=defaultListFields, nargs="+", type=str,
+                             help="Limit the output to only these fields. The default fields to show can be set with the config command.")
     list_parser.add_argument("-a", "--all-fields", action="store_true", help="Output every field on the machines.")
     list_parser.set_defaults(func=do_list, command="list")
 
+    defaultInfoFields = [x.strip() for x in config['Info'].get('defaultFields').split(',')]
     info_parser = command_parsers.add_parser("info", help="get info about a machine")
     info_parser.add_argument("box", metavar="BOX",  type=str, help="The name of the box you want info for.")
     info_parser.add_argument("-s", "--separator", type=str, default=" ", help="The separator to use when outputting the fields when -q is set")
     info_parser.add_argument("-q", "--quiet", action="store_true", help="Output only the field values without any formatting. Useful when parsing the output.")
-    info_parser.add_argument("-f", "--fields", metavar="field", nargs="+", type=str, help="Limit the output to only these fields. All fields shown when this is omitted.")
+    info_parser.add_argument("-f", "--fields", metavar="field", nargs="+", type=str, default=defaultInfoFields, help="Limit the output to only these fields. The default fields to show can be set with the config command.")
     info_parser.add_argument("-a", "--all-fields", action="store_true", help="Output every field on the machine.")
+    info_parser.add_argument("-l", "--list-format", action="store_true", help="Display the machine info in the same format as the default list command.")
     info_parser.set_defaults(func=do_info, command="info")
 
     spawn_parser = command_parsers.add_parser("spawn", help="[VIP Only] spawn a machine")
