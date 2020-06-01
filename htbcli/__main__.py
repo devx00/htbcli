@@ -14,6 +14,9 @@ apiKey = None
 lab = None
 machines = []
 api = None
+configfile = None
+config = None
+
 def init_api(apiKey):
     global api
     api = HTBAPI(apiKey)
@@ -22,7 +25,7 @@ def init_config():
     """
     Initialize the configuration directory and files. This will touch the file whether it already exists or not.
     """
-    global config, configfile, configdir
+    global config, configfile
 
     config = configparser.ConfigParser()
 
@@ -49,6 +52,11 @@ def load_config():
     if "Auth" not in config.sections():
         config['Auth'] = {'apiKey': '', 'lab':'free'}
         write_config()
+    if "List" not in config.sections():
+        defaultFields = ["id", "name", "os", "rating", "owned_user", "owned_root", "active"]
+        config['List'] = {'defaultFields': ','.join(defaultFields)}
+        write_config()
+
     apiKey = config['Auth'].get('apiKey')
     lab = config['Auth'].get('lab')
 
@@ -144,8 +152,9 @@ def do_config(args):
     Currently this only includes setting or retrieving the current api key.
     """
     global apiKey, lab, config
-    config['Auth']['apiKey'] = args.apiKey
-    config['Auth']['lab'] = args.lab
+    config['Auth']['apiKey'] = args.apiKey or config['Auth']['apiKey']
+    config['Auth']['lab'] = args.lab or config['Auth']['lab']
+    config['List']['defaultFields'] = ",".join(args.listFields) if args.listFields else config['List']['defaultFields']
     write_config()
     apiKey = args.apiKey
     
@@ -198,7 +207,7 @@ def do_list(args):
     if args.all_fields:
         fields = machines[0].keys() if len(machines) > 0 else []
     else:
-        fields = args.fields or ["id", "name", "os", "rating", "owned_user", "owned_root", "active"]
+        fields = args.fields
 
     machine_ids=None
     if args.assigned:
@@ -311,10 +320,12 @@ def parse_args():
     command_parsers = parser.add_subparsers(title="commands", prog="htb")
 
     config_parser = command_parsers.add_parser("config", help="configure this tool")
-    config_parser.add_argument("--apiKey", type=str, required=True, help="Your HTB api key. You can find this on your HTB settings page. THIS MUST BE SET BEFORE YOU CAN USE THIS TOOL FOR ANYTHING ELSE.")
-    config_parser.add_argument("--lab", type=str, choices=["free", "vip"], required=True, help="Which lab you connect to, either free or vip. If you do not pay for your HTB account then you need to pass free or this wont work.")
+    config_parser.add_argument("--apiKey", type=str, help="Your HTB api key. You can find this on your HTB settings page. THIS MUST BE SET BEFORE YOU CAN USE THIS TOOL FOR ANYTHING ELSE.")
+    config_parser.add_argument("--lab", type=str, choices=["free", "vip"], help="Which lab you connect to, either free or vip. If you do not pay for your HTB account then you need to pass free or this wont work.")
+    config_parser.add_argument("--listFields", type=str, nargs="+", metavar="field", help="The default fields to show in List mode.")
     config_parser.set_defaults(func=do_config, command="config")
 
+    defaultFields = [x.strip() for x in config['List'].get('defaultFields').split(',')]
     list_parser = command_parsers.add_parser("list", help="list machines")
     list_parser.add_argument("--retired", action="store_true", help="Include retired boxes in the output. [NOTE: Retired boxes are only available to VIP users and cannot be accessed by a free user.]")
     list_parser.add_argument("--assigned", action="store_true", help="Show what machines are assigned to you. [VIP Only]")
@@ -324,7 +335,7 @@ def parse_args():
     list_parser.add_argument("-s", "--separator", type=str, default=" ", help="The separator to use when outputting the fields when -q is set")
     list_parser.add_argument("-rs", "--row-separator", type=str, default="\n", help="The separator to use between rows when outputting the fields when -q is set")
     list_parser.add_argument("-q", "--quiet", action="store_true", help="Output only the field values without any formatting. Useful when parsing the output.")
-    list_parser.add_argument("-f", "--fields", metavar="field", default=["id", "name", "os", "rating","difficulty", "points", "owned_user", "owned_root", "active"], nargs="+", type=str, help="Limit the output to only these fields. All fields shown when this is omitted.")
+    list_parser.add_argument("-f", "--fields", metavar="field", default=defaultFields, nargs="+", type=str, help="Limit the output to only these fields. All fields shown when this is omitted.")
     list_parser.add_argument("-a", "--all-fields", action="store_true", help="Output every field on the machines.")
     list_parser.set_defaults(func=do_list, command="list")
 
