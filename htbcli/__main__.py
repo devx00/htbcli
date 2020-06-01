@@ -53,7 +53,8 @@ def load_config():
         config['Auth'] = {'apiKey': '', 'lab':'free'}
         write_config()
     if "List" not in config.sections():
-        defaultFields = ["id", "name", "os", "rating", "owned_user", "owned_root", "active"]
+        defaultFields = ["id", "name", "os", "rating", "difficulty",
+                         "points", "owned_user", "owned_root", "active"]
         config['List'] = {'defaultFields': ','.join(defaultFields)}
         write_config()
 
