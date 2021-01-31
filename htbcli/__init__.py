@@ -35,7 +35,7 @@ class HTBAPI(HTB):
         :params response: the response dict received from an API call
         :returns: the response dict if the call was successfull
         """
-        if response['success'] != '1' and response['success'] != 1:
+        if "success" in response and response['success'] != '1' and response['success'] != 1:
             message = "\n".join([ f"{k}: {v}" for k,v in response.items() ])
             raise HTBCLIError("success != 1", message=message)
         return response
@@ -75,13 +75,17 @@ class HTBAPI(HTB):
         Spawn a machine
 
         :params self: HTB object in use
-        :params mid: Machine ID
+        :params mid: Machine ID or 0 for arena.
         :params lab: vip for vip users, unknown for free.
         :returns: bool if successful, str status message
         """
         try:
-            resp = self._post(self._auth('/vm/{}/assign/{}'.format(lab, mid)))
-            return (resp['success'], resp['status'])
+            if mid == 0:
+                resp = self._get('/machines/release/spawn')
+            else:
+                resp = self._post(self._auth('/vm/{}/assign/{}'.format(lab, mid)))
+            status = resp['status'] if 'status' is resp else resp['message']
+            return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
             return False, "An Error Occurred"
@@ -91,13 +95,17 @@ class HTBAPI(HTB):
         Terminate a machine
 
         :params self: HTB object in use
-        :params mid: Machine ID
+        :params mid: Machine ID or 0 for arena
         :params lab: vip for vip users, unknown for free.
         :returns: bool if successful, str status message
         """
         try:
-            resp = self._post(self._auth('/vm/{}/remove/{}'.format(lab, mid)))
-            return (resp['success'], resp['status'])
+            if mid == 0:
+                resp = self._get('/machines/release/terminate')
+            else:
+                resp = self._post(self._auth('/vm/{}/remove/{}'.format(lab, mid)))
+            status = resp['status'] if 'status' is resp else resp['message']
+            return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
             return False, "An Error Occurred"
@@ -107,14 +115,92 @@ class HTBAPI(HTB):
         Own a challenge on a machine
 
         :params self: HTB object in use
-        :params mid: Machine ID
+        :params mid: Machine ID or 0 for arena
         :params hsh: Flag Hash
         :params diff: difficult (10-100)
         :returns: bool if successful
         """
         try:
-            resp = self._post(self._auth('/machines/own'), {"id": mid, "flag": hsh, "difficulty": diff})
-            return (resp['success'], resp['status'])
+            endpoint = "/machines/release/own" if mid == 0 else '/machines/own'
+            resp = self._post(self._auth(endpoint), {"id": mid, "flag": hsh, "difficulty": diff})
+            status = resp['status'] if 'status' is resp else resp['message']
+            return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
             return False, "An Error Occurred"
+
+    def reset_machine(self, mid: int) -> dict:
+        """
+        Reset a machine
+
+        :params self: HTB object in use
+        :params mid: Machine ID or 0 for arena
+        :returns: dict of info
+        """
+        try:
+            if mid == 0:
+                resp = self._get('/machines/release/reset')
+            else:
+                resp = super().reset_machine(mid)
+            return resp
+        except HTBAPIError as e:
+            print(e.message)
+            return False, "An Error Occurred"
+
+    def arena_stats(self) -> dict:
+        """
+        Get arena stats.
+
+        :params self: HTB object in use
+        :returns: dict of arena info.
+        """
+        try:
+            return self._get('/machines/release/stats')
+        except HTBAPIError as e:
+            print(e.message)
+            return False, "An Error Occurred" 
+
+    def arena_owns(self, mid: int) -> dict:
+        """
+        Get arena machine own info.
+
+        :params self: HTB object in use
+        :params mid: Machine ID
+        :returns: dict of info
+        """
+        try:
+            resp = self._get(f"/machines/release/owns/{mid}")
+            return resp["owns"]
+        except HTBAPIError as e:
+            print(e.message)
+            return False, "An Error Occurred"
+
+    def active_arena(self) -> dict:
+        """
+        Get active arena machine info.
+
+        :params self: HTB object in use
+        :returns: dict of info
+        """
+        try:
+            resp = self._get(f"/machines/release/active")
+            return resp
+        except HTBAPIError as e:
+            print(e.message)
+            return {'spawned': False}
+
+    def select_arena(self, region:str) -> bool:
+        """
+        Select arena region.
+
+        :params self: HTB object in use
+        :params region: us | eu.
+        :returns: bool success
+        """
+        try:
+            resp = self._post(self._auth(f"/labs/switch/{region.lower()}release"))
+            return resp['status'] == 1
+        except HTBAPIError as e:
+            print(e.message)
+            return False
+

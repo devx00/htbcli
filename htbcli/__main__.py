@@ -326,6 +326,48 @@ def show_help(parser, command=None):
         print("\n")
         parser.parse_args(args)    
 
+def do_arena_spawn(args):
+    stat, _ = api.spawn_machine(0)
+    if stat:
+        active = api.active_arena()
+        print(active['ip'])
+    else:
+        print("Failed to spawn arena machine.")
+        sys.exit(1)
+
+def do_arena_terminate(args):
+    _, message = api.terminate_machine(0)
+    print(message)
+
+def do_arena_reset(args):
+    stat, message = api.reset_machine(0)
+    if stat:
+        active = api.active_arena()
+        print(active['ip'])
+    else:
+        print(message)
+        sys.exit(1)
+
+def do_arena_own(args):
+    _, message = api.own_machine(0, hsh=args.flag, diff=args.difficulty)
+    print(message)
+
+def do_arena_view(args):
+    active = api.active_arena()
+    stats = api.arena_stats()
+    load_machines()
+    owns = api.arena_owns(get_id(stats['machine']))
+    details = {**stats, **owns, **active}
+    print_machine(details)
+
+
+def do_arena_region(args):
+    resp = api.select_arena(args.region)
+    if resp:
+        print(f"Successfully switched to server.\nBe sure to download your new connection pack.")
+    else:
+        print(f"Failed to switch to server")
+
 def parse_args():
     """
     Setup the argument parser. 
@@ -389,6 +431,28 @@ def parse_args():
     reset_parser.add_argument("box", metavar="BOX",  type=str, help="The name of the box to reset. Resetting may take a few minutes to take effect and may be cancelled by another user. ")
     reset_parser.set_defaults(func=do_reset, command="reset")
 
+    arena_parser = command_parsers.add_parser("arena", help="Control the arena box.")
+    arena_commands = arena_parser.add_subparsers(help="arena help")
+
+    arena_spawn_parser = arena_commands.add_parser("spawn", help="spawn the arena box. this returns the new arena IP on success.")
+    arena_spawn_parser.set_defaults(func=do_arena_spawn, command="spawn")
+    arena_terminate_parser = arena_commands.add_parser("terminate", help="terminate the arena box.")
+    arena_terminate_parser.set_defaults(func=do_arena_terminate, command="terminate")
+    arena_reset_parser = arena_commands.add_parser("reset", help="reset the arena box. this returns the new arena ip on success.")
+    arena_reset_parser.set_defaults(func=do_arena_reset, command="reset")
+
+    arena_own_parser = arena_commands.add_parser("own", help="submit a flag for the arena box.")
+    arena_own_parser.add_argument("-f", "--flag", type=str, required=True, help="The flag you want to submit to own the box. user/root is automatically determined by the server based on what flag you submit.")
+    arena_own_parser.add_argument("-d", "--difficulty", required=True, type=int, metavar="[1-10]", choices=range(1,11), help="The rating of how difficult you thought it was from 1-10.")
+    arena_own_parser.set_defaults(func=do_arena_own, command="own")
+
+    arena_view_parser = arena_commands.add_parser("view", help="view the arena box details. NOTE: This command is relatively slow, so keep that in mind when using this tool in speed-runs.")
+    arena_view_parser.set_defaults(func=do_arena_view, command="view")
+
+    arena_region_parser = arena_commands.add_parser("region", help="set the region to use for the arena. [us,eu]. NOTE: Switching, or setting region for first time, requires re-downloading your connection pack from the arena page on the HTB site.")
+    arena_region_parser.add_argument("box", metavar="REGION", choices=['eu', 'us'],  type=str, help="The region to use for the arena.")
+    arena_region_parser.set_defaults(func=do_arena_region, command="region")
+
     try:
         args = parser.parse_args()
     except:
@@ -409,7 +473,7 @@ def main():
         print("You must configure your apiKey before interacting with the HTB API.\n\nTry running 'htb config --apiKey=[your apiKey here]'")
         sys.exit(1)
     init_api(apiKey)
-    if args.command != "config":
+    if args.command not in ["config", "arena"]:
         load_machines()
     args.func(args)
 
