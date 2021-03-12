@@ -12,7 +12,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='htbcli',
-    version='1.1.5',
+    version='1.1.6',
 
     description='Hack the Box CLI',
     long_description=long_description,
