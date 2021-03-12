@@ -84,7 +84,7 @@ class HTBAPI(HTB):
                 resp = self._get('/machines/release/spawn')
             else:
                 resp = self._post(self._auth('/vm/{}/assign/{}'.format(lab, mid)))
-            status = resp['status'] if 'status' is resp else resp['message']
+            status = resp['status'] if 'status' in resp else resp['message']
             return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
@@ -104,7 +104,7 @@ class HTBAPI(HTB):
                 resp = self._get('/machines/release/terminate')
             else:
                 resp = self._post(self._auth('/vm/{}/remove/{}'.format(lab, mid)))
-            status = resp['status'] if 'status' is resp else resp['message']
+            status = resp['status'] if 'status' in resp else resp['message']
             return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
@@ -123,7 +123,7 @@ class HTBAPI(HTB):
         try:
             endpoint = "/machines/release/own" if mid == 0 else '/machines/own'
             resp = self._post(self._auth(endpoint), {"id": mid, "flag": hsh, "difficulty": diff})
-            status = resp['status'] if 'status' is resp else resp['message']
+            status = resp['status'] if 'status' in resp else resp['message']
             return (resp['success'], status)
         except HTBAPIError as e:
             print(e.message)
